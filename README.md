@@ -1,5 +1,9 @@
 # CortexNet
 
+[![CI](https://github.com/chaojixiaokeai/CortexNet/actions/workflows/ci.yml/badge.svg)](https://github.com/chaojixiaokeai/CortexNet/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/cortexnet.svg)](https://pypi.org/project/cortexnet/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+
 `CortexNet` 是一个面向语言建模与推理场景的神经网络架构实现，核心思路是将多尺度状态空间建模、选择性稀疏注意力、记忆系统、条件路由与可选高级推理模块组合到同一框架中。
 
 本仓库已经完成以下整理：
@@ -73,8 +77,20 @@ python -m pytest -q
 
 - 架构说明：`ARCHITECTURE.md`
 - 模块职责图：`MODULE_MAP.md`
+- 变更记录：`CHANGELOG.md`
+- 贡献指南：`CONTRIBUTING.md`
+- 安全策略：`SECURITY.md`
 
 ## Compatibility Notes
 
 - 对外推荐只使用 `CortexNet`。
 - 历史命名（如 `CortexNetV2` / `CortexNetV3`）仍保留为兼容别名，避免旧代码立即失效。
+
+## Development Commands
+
+```bash
+make install-dev
+make lint
+make test-all
+make check
+```

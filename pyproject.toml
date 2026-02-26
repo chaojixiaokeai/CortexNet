@@ -13,6 +13,7 @@ authors = [
     {name = "CortexNet Team"},
 ]
 keywords = ["deep-learning", "llm", "state-space-model", "sparse-attention", "pytorch"]
+urls = {Homepage = "https://github.com/chaojixiaokeai/CortexNet", Repository = "https://github.com/chaojixiaokeai/CortexNet", Issues = "https://github.com/chaojixiaokeai/CortexNet/issues", Changelog = "https://github.com/chaojixiaokeai/CortexNet/blob/main/CHANGELOG.md"}
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
@@ -39,6 +40,9 @@ dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "ruff>=0.1.0",
+    "pyflakes>=3.2.0",
+    "build>=1.0.0",
+    "twine>=5.0.0",
 ]
 distributed = [
     "deepspeed>=0.10.0",

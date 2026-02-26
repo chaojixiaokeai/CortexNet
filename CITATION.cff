@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: CortexNet
+message: "If you use CortexNet, please cite this project."
+type: software
+authors:
+  - family-names: CortexNet Team
+repository-code: "https://github.com/chaojixiaokeai/CortexNet"
+license: Apache-2.0
+version: 3.2.1
+date-released: 2026-02-27
