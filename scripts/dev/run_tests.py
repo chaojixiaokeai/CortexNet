@@ -128,7 +128,13 @@ def test_weight_adapter_mapping():
 def test_weight_adapter_gqa():
     from cortexnet.config import CortexNetConfig
     from cortexnet.adapter.weight_adapter import WeightAdapter
-    config = CortexNetConfig(hidden_size=256, num_heads=8, num_kv_heads=2, num_layers=1)
+    config = CortexNetConfig(
+        hidden_size=256,
+        num_heads=8,
+        num_kv_heads=2,
+        num_layers=1,
+        lite=False,
+    )
     adapter = WeightAdapter("llama", config)
     raw = {
         "model.layers.0.self_attn.k_proj.weight": torch.randn(64, 256),
