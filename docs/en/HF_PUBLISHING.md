@@ -8,8 +8,11 @@ Set `HF_TOKEN` with **write** permission.
 
 ```bash
 export HF_TOKEN=hf_xxx
-python scripts/release/publish_hf_assets.py --namespace chaojixiaokeai
+python scripts/release/publish_hf_assets.py
 ```
+
+By default, namespace is auto-detected from `HF_TOKEN` owner account.
+If you need an org namespace, pass `--namespace <org_name>`.
 
 ## 3. GitHub Actions Publish
 
@@ -20,6 +23,8 @@ Configure repository secret:
 Then run workflow:
 
 - `.github/workflows/publish_hf.yml`
+
+You can leave `namespace` input empty to auto-use token owner namespace.
 
 ## 4. Outputs
 

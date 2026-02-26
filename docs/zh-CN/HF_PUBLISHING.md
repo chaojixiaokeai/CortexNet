@@ -8,8 +8,11 @@
 
 ```bash
 export HF_TOKEN=hf_xxx
-python scripts/release/publish_hf_assets.py --namespace chaojixiaokeai
+python scripts/release/publish_hf_assets.py
 ```
+
+默认会自动使用 `HF_TOKEN` 对应账号作为命名空间。  
+如果要发布到组织命名空间，请显式传入 `--namespace <组织名>`。
 
 ## 3. GitHub Actions 发布
 
@@ -20,6 +23,8 @@ python scripts/release/publish_hf_assets.py --namespace chaojixiaokeai
 然后手动触发：
 
 - `.github/workflows/publish_hf.yml`
+
+`namespace` 输入可以留空，系统会自动使用 token 对应账号命名空间。
 
 ## 4. 发布结果
 

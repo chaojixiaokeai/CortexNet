@@ -6,7 +6,7 @@ on:
       namespace:
         description: "Hugging Face namespace (user/org)"
         required: false
-        default: "chaojixiaokeai"
+        default: ""
       model_repo:
         description: "Model repo name"
         required: false

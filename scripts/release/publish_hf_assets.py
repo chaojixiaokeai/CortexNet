@@ -103,7 +103,7 @@ def upload_space_repo(api: HfApi, namespace: str, space_repo: str, token: str) -
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Publish CortexNet assets to Hugging Face Hub")
-    parser.add_argument("--namespace", default="chaojixiaokeai", help="HF user/org namespace")
+    parser.add_argument("--namespace", default="", help="HF user/org namespace (default: token owner)")
     parser.add_argument("--model-repo", default="CortexNet", help="HF model repo name")
     parser.add_argument("--space-repo", default="CortexNet-Demo", help="HF space repo name")
     parser.add_argument("--skip-space", action="store_true", help="Skip uploading Space repo")
@@ -120,13 +120,18 @@ def main() -> int:
     api = HfApi(token=token)
     who = api.whoami(token=token)
     account = who.get("name", "unknown")
-    print(f"Authenticated Hugging Face account: {account}")
+    namespace = args.namespace.strip() or account
+    if not namespace or namespace == "unknown":
+        raise SystemExit("Cannot determine Hugging Face namespace from token. Please pass --namespace explicitly.")
 
-    model_repo_id = upload_model_repo(api, args.namespace, args.model_repo, token)
+    print(f"Authenticated Hugging Face account: {account}")
+    print(f"Using namespace: {namespace}")
+
+    model_repo_id = upload_model_repo(api, namespace, args.model_repo, token)
     print(f"Model repo updated: https://huggingface.co/{model_repo_id}")
 
     if not args.skip_space:
-        space_repo_id = upload_space_repo(api, args.namespace, args.space_repo, token)
+        space_repo_id = upload_space_repo(api, namespace, args.space_repo, token)
         print(f"Space repo updated: https://huggingface.co/spaces/{space_repo_id}")
 
     return 0
