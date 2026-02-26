@@ -12,19 +12,22 @@ CortexNet 兼容模式组件 (Compatibility Mode Components)
 这些组件在 compatibility_mode=True 时替代完整 V3 模块使用。
 """
 
+from __future__ import annotations
+
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
 
 try:
-    from .config import CortexNetConfig
-    from .blocks import RMSNorm
     from .attention import precompute_rope_freqs, apply_rope, apply_rope_with_positions
+    from .blocks import RMSNorm
+    from .config import CortexNetConfig
 except ImportError:
-    from cortexnet.config import CortexNetConfig
-    from cortexnet.blocks import RMSNorm
     from cortexnet.attention import precompute_rope_freqs, apply_rope, apply_rope_with_positions
+    from cortexnet.blocks import RMSNorm
+    from cortexnet.config import CortexNetConfig
 
 
 class _NoOpEvolutionEngine(nn.Module):

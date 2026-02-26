@@ -29,7 +29,10 @@
       替代了原先的列表推导式串行执行
 """
 
+from __future__ import annotations
+
 import logging
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
