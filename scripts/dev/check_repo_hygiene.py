@@ -23,6 +23,7 @@ _NOISE_PATTERNS = (
 
 _SOURCE_DIR_PREFIXES = ("cortexnet/", "scripts/", "examples/", "tests/")
 _SOURCE_SUFFIXES = (".py",)
+_SELF_PATH = "scripts/dev/check_repo_hygiene.py"
 _LOCAL_ABS_PATH_PATTERNS = (
     re.compile(r"/Users/[^\"' \n\t]+"),
     re.compile(r"C:\\\\Users\\\\[^\"' \n\t]+"),
@@ -45,6 +46,8 @@ def _check_noise_files(tracked: list[str]) -> list[str]:
 def _check_local_paths(tracked: list[str]) -> list[str]:
     findings: list[str] = []
     for rel in tracked:
+        if rel == _SELF_PATH:
+            continue
         if not rel.endswith(_SOURCE_SUFFIXES):
             continue
         if not rel.startswith(_SOURCE_DIR_PREFIXES):
