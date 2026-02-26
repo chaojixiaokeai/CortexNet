@@ -40,16 +40,17 @@ def upload_model_repo(api: HfApi, namespace: str, model_repo: str, token: str) -
             token=token,
         )
 
-    for path in [
-        REPO_ROOT / "README.md",
-        REPO_ROOT / "LICENSE",
-        REPO_ROOT / "CHANGELOG.md",
-        REPO_ROOT / "docs" / "README.md",
+    # Keep the model card as HF homepage README. Upload project docs under distinct names.
+    for path, target in [
+        (REPO_ROOT / "README.md", "PROJECT_README.md"),
+        (REPO_ROOT / "docs" / "README.md", "DOCS_INDEX.md"),
+        (REPO_ROOT / "LICENSE", "LICENSE"),
+        (REPO_ROOT / "CHANGELOG.md", "CHANGELOG.md"),
     ]:
         if path.exists():
             api.upload_file(
                 path_or_fileobj=str(path),
-                path_in_repo=path.name,
+                path_in_repo=target,
                 repo_id=repo_id,
                 repo_type="model",
                 token=token,
