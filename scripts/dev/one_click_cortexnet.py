@@ -26,8 +26,8 @@ def main() -> int:
     parser.add_argument("--prompt", default=None, help="单轮提问（设置后执行一次并退出）")
     parser.add_argument(
         "--model-path",
-        default="/Users/pengjiajun/.cache/modelscope/hub/models/Qwen/Qwen3-8B",
-        help="本地模型目录路径",
+        default=os.getenv("CORTEXNET_MODEL_PATH", ""),
+        help="本地模型目录路径（默认读取环境变量 CORTEXNET_MODEL_PATH）",
     )
     parser.add_argument(
         "--device",
@@ -46,6 +46,12 @@ def main() -> int:
 
     if not os.path.exists(chat_py):
         print(f"[错误] 找不到聊天脚本: {chat_py}")
+        return 2
+    if not args.model_path:
+        print("[错误] 未提供模型目录。请传入 --model-path 或设置环境变量 CORTEXNET_MODEL_PATH。")
+        return 2
+    if not os.path.isdir(args.model_path):
+        print(f"[错误] 模型目录不存在: {args.model_path}")
         return 2
     if not args.skip_tests:
         if not os.path.exists(tests_py):

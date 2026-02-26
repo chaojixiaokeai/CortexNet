@@ -311,10 +311,11 @@ def stream_generate_once(
 
 def main():
     parser = argparse.ArgumentParser(description="Qwen3-8B + CortexNet 聊天脚本")
+    default_model_path = os.getenv("CORTEXNET_MODEL_PATH", "")
     parser.add_argument(
         "--model-path",
-        default="/Users/pengjiajun/.cache/modelscope/hub/models/Qwen/Qwen3-8B",
-        help="本地模型目录路径",
+        default=default_model_path,
+        help="本地模型目录路径（默认读取环境变量 CORTEXNET_MODEL_PATH）",
     )
     parser.add_argument(
         "--device",
@@ -394,6 +395,8 @@ def main():
     )
     args = parser.parse_args()
 
+    if not args.model_path:
+        raise ValueError("请通过 --model-path 传入模型目录，或设置环境变量 CORTEXNET_MODEL_PATH。")
     if not os.path.isdir(args.model_path):
         raise FileNotFoundError(f"模型目录不存在: {args.model_path}")
 

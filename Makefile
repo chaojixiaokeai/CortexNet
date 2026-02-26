@@ -12,6 +12,7 @@ install-dev:
 lint:
 	python -m pyflakes cortexnet tests scripts examples
 	python -m compileall -q cortexnet scripts tests examples
+	python scripts/dev/check_repo_hygiene.py
 	@if python -c "import ruff" >/dev/null 2>&1; then \
 		python -m ruff check .; \
 	else \

@@ -28,6 +28,7 @@ jobs:
         run: |
           python -m compileall -q cortexnet scripts tests examples
           python -m pyflakes cortexnet tests scripts examples
+          python scripts/dev/check_repo_hygiene.py
           python -m ruff check .
 
   test:

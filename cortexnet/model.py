@@ -34,6 +34,7 @@ import os
 import json
 import hashlib
 import threading
+import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -54,6 +55,8 @@ except ImportError:
     from cortexnet.compat import (
         _NoOpEvolutionEngine, _CompatCortexBlockV3,
     )
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -809,8 +812,10 @@ class CortexNetV3(CortexNetBase):
                     block.graph_reasoning = torch.compile(block.graph_reasoning, **kwargs)
                 if hasattr(block, "causal_reasoning"):
                     block.causal_reasoning = torch.compile(block.causal_reasoning, **kwargs)
-        except Exception:
-            pass  # torch.compile 不可用时静默跳过
+        except Exception as exc:
+            if os.getenv("CORTEXNET_COMPILE_STRICT", "0") == "1":
+                raise
+            logger.warning("torch.compile skipped: %s", exc)
         return self
 
     @torch.no_grad()

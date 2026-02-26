@@ -4,7 +4,7 @@ import argparse
 
 import torch
 
-from cortexnet import CortexNet, CortexNetConfig
+from cortexnet import CortexNet, CortexNetConfig, set_seed
 from cortexnet.ops.device_manager import resolve_device_string
 
 
@@ -14,11 +14,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--seq-len", type=int, default=64)
     parser.add_argument("--device", default="auto", help="auto/cpu/cuda/mps/npu/mlu")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     return parser
 
 
 def main() -> None:
     args = build_parser().parse_args()
+    set_seed(args.seed)
     device = resolve_device_string(args.device)
 
     cfg = CortexNetConfig(
@@ -46,7 +48,7 @@ def main() -> None:
         optimizer.step()
 
         if step % 5 == 0 or step == args.steps:
-            print(f"step={step} loss={float(loss):.4f}")
+            print(f"step={step} loss={loss.detach().item():.4f}")
 
 
 if __name__ == "__main__":

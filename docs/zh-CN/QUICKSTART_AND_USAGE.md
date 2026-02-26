@@ -139,6 +139,9 @@ python scripts/dev/run_tests.py
 
 ```bash
 python scripts/dev/one_click_cortexnet.py --model-path "/path/to/Qwen3-8B"
+# 或：
+export CORTEXNET_MODEL_PATH="/path/to/Qwen3-8B"
+python scripts/dev/one_click_cortexnet.py
 ```
 
 ### 7.3 基准对比

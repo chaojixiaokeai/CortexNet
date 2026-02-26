@@ -508,11 +508,12 @@ def run_parent(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Long-context benchmark for CortexNet vs Transformer")
+    default_model_path = os.getenv("CORTEXNET_MODEL_PATH", "")
     parser.add_argument(
         "--model-path",
         type=str,
-        default="/Users/pengjiajun/.cache/modelscope/hub/models/Qwen/Qwen3-8B",
-        help="本地模型目录（含 config.json / safetensors）",
+        default=default_model_path,
+        help="本地模型目录（默认读取环境变量 CORTEXNET_MODEL_PATH）",
     )
     parser.add_argument("--device", type=str, default="auto", help="auto/cpu/mps/cuda/npu")
     parser.add_argument(
@@ -581,6 +582,9 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
+    if not args.model_path:
+        print("[ERROR] Missing --model-path. Set --model-path or CORTEXNET_MODEL_PATH.", file=sys.stderr)
+        return 2
     if not os.path.exists(args.model_path):
         print(f"[ERROR] Model path not found: {args.model_path}", file=sys.stderr)
         return 2

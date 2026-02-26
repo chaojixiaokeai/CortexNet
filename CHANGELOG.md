@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+### Changed
+
+- Removed hardcoded local absolute model paths in chat/dev scripts:
+  - `scripts/chat/chat_qwen3_cortexnet.py`
+  - `scripts/dev/one_click_cortexnet.py`
+  Both now support `CORTEXNET_MODEL_PATH`.
+- `examples/train_tiny.py` now sets seed via `--seed` and avoids tensor-to-scalar warning by using `loss.detach().item()`.
+- `cortexnet/model.py::compile_model` now logs compile skip reason and supports strict mode via `CORTEXNET_COMPILE_STRICT=1`.
+- Simplified optional data import block in `cortexnet/__init__.py` by removing redundant placeholders.
+
+### Added
+
+- Added repository hygiene checker:
+  - `scripts/dev/check_repo_hygiene.py`
+  - integrated into `make lint` and `.github/workflows/ci.yml`
+  - prevents tracked cache files and hardcoded local absolute paths from entering repo.
+
 ## 3.2.5 - 2026-02-26
 
 ### Added

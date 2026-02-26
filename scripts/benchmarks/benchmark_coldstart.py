@@ -193,10 +193,12 @@ def print_report(payload: Dict[str, Any]) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Coldstart benchmark for CortexNet")
+    default_model_path = os.getenv("CORTEXNET_MODEL_PATH", "")
     parser.add_argument(
         "--model-path",
         type=str,
-        default="/Users/pengjiajun/.cache/modelscope/hub/models/Qwen/Qwen3-8B",
+        default=default_model_path,
+        help="本地模型目录（默认读取环境变量 CORTEXNET_MODEL_PATH）",
     )
     parser.add_argument("--device", type=str, default="auto", help="auto/cpu/mps/cuda/npu/mlu")
     parser.add_argument("--dtype", type=str, default="auto", choices=["auto", "float16", "bfloat16", "float32"])
@@ -244,6 +246,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
+    if not args.model_path:
+        print("[ERROR] Missing --model-path. Set --model-path or CORTEXNET_MODEL_PATH.", file=sys.stderr)
+        return 2
+    if not os.path.exists(args.model_path):
+        print(f"[ERROR] Model path not found: {args.model_path}", file=sys.stderr)
+        return 2
     payload = run(args)
     print_report(payload)
 

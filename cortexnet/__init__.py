@@ -92,7 +92,7 @@ try:
     _HAS_DATA = True
 except ImportError:
     _DATA_EXPORTS = ()
-    pass
+    _HAS_DATA = False
 
 # Legacy compatibility aliases (not part of the default public API list).
 CortexNetV2 = _CortexNetV2
@@ -181,17 +181,4 @@ __all__ = [
 ]
 
 if _HAS_DATA:
-    __all__.extend(
-        [
-            "SimpleTokenizer",
-            "MiniMindTokenizer",
-            "TextCorpusDataset",
-            "StreamingDataset",
-            "ConversationDataset",
-            "PretrainDataset",
-            "CodeCompletionDataset",
-            "CodeGenerationDataset",
-            "download_wikitext2",
-            "download_minimind_data",
-        ]
-    )
+    __all__.extend([obj.__name__ for obj in _DATA_EXPORTS])
