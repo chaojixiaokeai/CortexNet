@@ -24,6 +24,13 @@ python -m build
 python -m twine check dist/*
 ```
 
+Optional local hooks:
+
+```bash
+pre-commit install
+pre-commit run --all-files
+```
+
 ## Branches and Commits
 
 - Create focused branches from `main`
@@ -42,4 +49,3 @@ python -m twine check dist/*
 - Explain what changed and why
 - Include verification output
 - Mention known limitations or follow-up work
-

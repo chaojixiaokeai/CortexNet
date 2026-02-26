@@ -28,6 +28,13 @@ python -m build
 pip install dist/*.whl
 ```
 
+## CLI
+
+```bash
+python -m cortexnet --version
+python -m cortexnet --smoke-test
+```
+
 ## Quick Start
 
 ```python

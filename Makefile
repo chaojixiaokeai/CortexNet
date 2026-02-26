@@ -1,15 +1,20 @@
-.PHONY: install install-dev lint test test-all build check clean
+.PHONY: install install-dev lint test test-all build check clean precommit
 
 install:
 	python -m pip install -e .
 
 install-dev:
 	python -m pip install -e .[dev]
-	python -m pip install pyflakes build twine
+	python -m pip install pyflakes build twine pre-commit
 
 lint:
 	python -m pyflakes cortexnet tests scripts
 	python -m compileall -q cortexnet scripts tests
+	@if python -c "import ruff" >/dev/null 2>&1; then \
+		python -m ruff check .; \
+	else \
+		echo "ruff not installed; skipping ruff check"; \
+	fi
 
 test:
 	python -m pytest -q
@@ -25,5 +30,9 @@ check: build
 
 clean:
 	find . -name "*.pyc" -delete
-	find . -name "__pycache__" -type d -empty -delete
+	find . -name "__pycache__" -type d -exec rm -rf {} +
 	find . -name ".DS_Store" -delete
+	rm -rf build dist *.egg-info .pytest_cache
+
+precommit:
+	pre-commit run --all-files

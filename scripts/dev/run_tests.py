@@ -10,6 +10,7 @@ import os
 import sys
 import json
 import tempfile
+import argparse
 
 # 将项目根目录加入 sys.path，确保可直接导入 cortexnet 包
 repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -269,7 +270,29 @@ ALL_TESTS = [
     test_inference_adapter, test_calibrator,
 ]
 
-if __name__ == "__main__":
+def main() -> int:
+    parser = argparse.ArgumentParser(description="CortexNet dev regression runner")
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List available tests and exit",
+    )
+    parser.add_argument(
+        "--match",
+        default=None,
+        help="Run only tests whose name contains this substring",
+    )
+    args = parser.parse_args()
+
+    selected = ALL_TESTS
+    if args.match:
+        selected = [fn for fn in ALL_TESTS if args.match in fn.__name__]
+
+    if args.list:
+        for fn in selected:
+            print(fn.__name__)
+        return 0
+
     print("=" * 60)
     print("  CortexNet 适配器综合测试")
     print("=" * 60)
@@ -277,7 +300,7 @@ if __name__ == "__main__":
     passed = failed = 0
     errors = []
 
-    for fn in ALL_TESTS:
+    for fn in selected:
         try:
             fn()
             passed += 1
@@ -289,11 +312,15 @@ if __name__ == "__main__":
 
     print()
     print("=" * 60)
-    print(f"  Results: {passed} passed, {failed} failed, {len(ALL_TESTS)} total")
+    print(f"  Results: {passed} passed, {failed} failed, {len(selected)} total")
     print("=" * 60)
     if errors:
         print("\nError details:")
         for name, tb in errors:
             print(f"\n--- {name} ---")
             print(tb)
-    sys.exit(0 if failed == 0 else 1)
+    return 0 if failed == 0 else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

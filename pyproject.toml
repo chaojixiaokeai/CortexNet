@@ -48,6 +48,9 @@ distributed = [
     "deepspeed>=0.10.0",
 ]
 
+[project.scripts]
+cortexnet = "cortexnet.__main__:main"
+
 [tool.setuptools.packages.find]
 include = ["cortexnet*"]
 exclude = ["tests*", "scripts*"]
