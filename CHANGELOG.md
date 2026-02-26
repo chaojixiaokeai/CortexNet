@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file.
 
 - Standard package layout under `cortexnet/`
 - Open-source docs: `README.md`, `ARCHITECTURE.md`, `MODULE_MAP.md`
+- Full bilingual documentation hub under `docs/` (architecture book, whitepaper, quickstart, training/deployment, compatibility, benchmarking, roadmap, API reference, open-source guide)
 - Governance docs: `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`
 - GitHub templates and workflows for CI and publishing
 - Security/dependency automation: `codeql.yml`, `dependabot.yml`

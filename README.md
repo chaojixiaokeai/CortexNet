@@ -82,6 +82,7 @@ python -m pytest -q
 
 ## Docs
 
+- 文档中心（中英文完整文档）：`docs/README.md`
 - 架构说明：`ARCHITECTURE.md`
 - 模块职责图：`MODULE_MAP.md`
 - 变更记录：`CHANGELOG.md`
