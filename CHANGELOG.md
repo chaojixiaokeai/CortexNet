@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## 3.2.2 - 2026-02-26
+
+### Changed
+
+- Release workflow now uses `skip-existing: true` to make manual/duplicate publish runs idempotent.
+- CI compatibility improved for Python 3.9 type annotations and current legacy code style checks.
+
 ## 3.2.1 - 2026-02-27
 
 ### Added
