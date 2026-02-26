@@ -13,6 +13,8 @@ This folder contains full documentation for CortexNet in both Chinese and Englis
 - [路线图与版本策略](./zh-CN/ROADMAP.md)
 - [开源发布与协作指南](./zh-CN/OPEN_SOURCE_GUIDE.md)
 - [API 参考](./zh-CN/API_REFERENCE.md)
+- [常见问题（FAQ）](./zh-CN/FAQ.md)
+- [架构可视化](./zh-CN/ARCHITECTURE_VISUAL.md)
 
 ## English
 
@@ -25,3 +27,5 @@ This folder contains full documentation for CortexNet in both Chinese and Englis
 - [Roadmap and Versioning](./en/ROADMAP.md)
 - [Open Source Collaboration Guide](./en/OPEN_SOURCE_GUIDE.md)
 - [API Reference](./en/API_REFERENCE.md)
+- [FAQ](./en/FAQ.md)
+- [Architecture Visuals](./en/ARCHITECTURE_VISUAL.md)

@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## 3.2.3 - 2026-02-26
+
+### Added
+
+- Added `SUPPORT.md` for issue routing and maintainer response expectations.
+- Added bilingual FAQ docs (`docs/zh-CN/FAQ.md`, `docs/en/FAQ.md`).
+- Added bilingual architecture visual docs with Mermaid flows (`docs/zh-CN/ARCHITECTURE_VISUAL.md`, `docs/en/ARCHITECTURE_VISUAL.md`).
+- Added runnable examples under `examples/` for minimal inference, migration loading, and tiny training.
+
+### Changed
+
+- Expanded docs index and root README navigation to include support and examples.
+- Upgraded release guide with GitHub Actions-first publish flow and failure recovery notes.
+
 ## 3.2.2 - 2026-02-26
 
 ### Changed

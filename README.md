@@ -87,7 +87,9 @@ python -m pytest -q
 - 模块职责图：`MODULE_MAP.md`
 - 变更记录：`CHANGELOG.md`
 - 贡献指南：`CONTRIBUTING.md`
+- 支持与问题分流：`SUPPORT.md`
 - 安全策略：`SECURITY.md`
+- 示例代码：`examples/README.md`
 
 ## Compatibility Notes
 

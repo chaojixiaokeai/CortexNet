@@ -6,6 +6,7 @@
 make install-dev
 make lint
 make test-all
+make check
 ```
 
 ## 2. Bump Version
@@ -17,21 +18,39 @@ Update version in:
 - `CHANGELOG.md`
 - `CITATION.cff`
 
-## 3. Build and Validate
+## 3. Commit and Push
 
 ```bash
-make check
+git add pyproject.toml cortexnet/__init__.py CHANGELOG.md CITATION.cff
+git commit -m "release: bump version to X.Y.Z"
+git push origin main
 ```
 
-## 4. Publish
+## 4. Publish via GitHub Actions (Recommended)
 
-```bash
-python -m twine upload dist/*
-```
+Trigger `.github/workflows/publish.yml` with one of:
 
-For GitHub Actions publishing, set repository secret:
+- `workflow_dispatch`
+- GitHub Release (`release: published`)
+
+## 5. Verify Publish
+
+Check:
+
+- GitHub Actions run status (`build` + `publish` jobs)
+- https://pypi.org/project/cortexnet/ latest version and upload timestamps
+
+## 6. Required Secret
+
+Repository secret:
 
 - `PYPI_API_TOKEN`
 
-Then trigger `.github/workflows/publish.yml`.
+## 7. Common Failure and Fix
 
+`HTTP 400 File already exists` means that version has already been uploaded to PyPI.
+
+Fix:
+
+1. bump version and release again, or
+2. keep `skip-existing: true` enabled for idempotent re-runs.

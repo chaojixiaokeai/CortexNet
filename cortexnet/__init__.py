@@ -100,7 +100,7 @@ CortexNetV3 = _CortexNetV3
 CortexBlockV2 = _CortexBlockV2
 CortexBlockV3 = _CortexBlockV3
 
-__version__ = "3.2.2"
+__version__ = "3.2.3"
 
 __all__ = [
     "CortexNet",
