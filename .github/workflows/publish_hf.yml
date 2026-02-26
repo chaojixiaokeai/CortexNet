@@ -1,0 +1,55 @@
+name: Publish Hugging Face
+
+on:
+  workflow_dispatch:
+    inputs:
+      namespace:
+        description: "Hugging Face namespace (user/org)"
+        required: false
+        default: "chaojixiaokeai"
+      model_repo:
+        description: "Model repo name"
+        required: false
+        default: "CortexNet"
+      space_repo:
+        description: "Space repo name"
+        required: false
+        default: "CortexNet-Demo"
+      skip_space:
+        description: "Skip space upload (true/false)"
+        required: false
+        default: "false"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install huggingface_hub
+
+      - name: Ensure HF token is configured
+        run: |
+          if [ -z "${{ secrets.HF_TOKEN }}" ]; then
+            echo "HF_TOKEN secret is not configured."
+            exit 1
+          fi
+
+      - name: Publish HF assets
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          CMD="python scripts/release/publish_hf_assets.py --namespace '${{ github.event.inputs.namespace }}' --model-repo '${{ github.event.inputs.model_repo }}' --space-repo '${{ github.event.inputs.space_repo }}'"
+          if [ "${{ github.event.inputs.skip_space }}" = "true" ]; then
+            CMD="$CMD --skip-space"
+          fi
+          eval "$CMD"

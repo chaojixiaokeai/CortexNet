@@ -1,4 +1,6 @@
-.PHONY: install install-dev lint test test-all build check clean precommit
+.PHONY: install install-dev lint test test-all build check clean precommit examples-smoke report-smoke
+
+VERSION ?= $(shell python -c "import cortexnet; print(cortexnet.__version__)")
 
 install:
 	python -m pip install -e .
@@ -21,6 +23,13 @@ test:
 
 test-all: test
 	python scripts/dev/run_tests.py
+
+examples-smoke:
+	python examples/minimal_infer.py
+	python examples/train_tiny.py --steps 2 --batch-size 1 --seq-len 16 --device cpu
+
+report-smoke:
+	python scripts/benchmarks/benchmark_release_smoke.py --device cpu --dtype float32 --iters 30 --warmup 5 --output docs/reports/artifacts/v$(VERSION)_smoke.json
 
 build:
 	python -m build

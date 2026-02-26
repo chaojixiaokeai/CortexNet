@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file.
 
+## 3.2.5 - 2026-02-26
+
+### Added
+
+- Added Hugging Face publishing workflow: `.github/workflows/publish_hf.yml`.
+- Added Hugging Face publishing script and templates:
+  - `scripts/release/publish_hf_assets.py`
+  - `deploy/hf_space/*`
+  - `hf/model_card/README.md`
+- Added bilingual Hugging Face publishing docs:
+  - `docs/en/HF_PUBLISHING.md`
+  - `docs/zh-CN/HF_PUBLISHING.md`
+
+### Changed
+
+- PyPI publish workflow now tries Trusted Publishing (OIDC) first and falls back to token.
+- Release guide now documents Trusted Publishing setup URL and HF token usage.
+- Added `examples-smoke` and `report-smoke` Make targets.
+
 ## 3.2.4 - 2026-02-26
 
 ### Added

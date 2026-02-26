@@ -21,4 +21,5 @@ python scripts/benchmarks/benchmark_release_smoke.py \
 
 ## Reports
 
+- [v3.2.5 Smoke Report](./v3.2.5_smoke.md)
 - [v3.2.4 Smoke Report](./v3.2.4_smoke.md)

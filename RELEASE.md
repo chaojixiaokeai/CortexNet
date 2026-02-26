@@ -33,6 +33,8 @@ Trigger `.github/workflows/publish.yml` with one of:
 - `workflow_dispatch`
 - GitHub Release (`release: published`)
 
+PyPI publish workflow now tries Trusted Publishing (OIDC) first, then falls back to API token if configured.
+
 ## 5. Verify Publish
 
 Check:
@@ -56,8 +58,17 @@ python scripts/benchmarks/benchmark_release_smoke.py \
 Repository secret:
 
 - `PYPI_API_TOKEN`
+- `HF_TOKEN` (optional, for `.github/workflows/publish_hf.yml`)
 
-## 8. Common Failure and Fix
+## 8. Trusted Publishing Setup (PyPI OIDC)
+
+Open this URL while logged in as package owner:
+
+- https://pypi.org/manage/project/cortexnet/settings/publishing/?provider=github&owner=chaojixiaokeai&repository=CortexNet&workflow_filename=publish.yml
+
+After setup, publishing can run without API token.
+
+## 9. Common Failure and Fix
 
 `HTTP 400 File already exists` means that version has already been uploaded to PyPI.
 

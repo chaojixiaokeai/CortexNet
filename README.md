@@ -99,6 +99,7 @@ python -m pytest -q
 - 安全策略：`SECURITY.md`
 - 示例代码：`examples/README.md`
 - 发布基准报告：`docs/reports/README.md`
+- Hugging Face 发布：`docs/en/HF_PUBLISHING.md` / `docs/zh-CN/HF_PUBLISHING.md`
 
 ## Compatibility Notes
 

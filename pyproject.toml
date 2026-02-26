@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cortexnet"
-version = "3.2.4"
+version = "3.2.5"
 description = "CortexNet: unified neural network architecture beyond Transformers"
 readme = "README.md"
 license = "Apache-2.0"

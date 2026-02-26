@@ -15,6 +15,7 @@ This folder contains full documentation for CortexNet in both Chinese and Englis
 - [API 参考](./zh-CN/API_REFERENCE.md)
 - [常见问题（FAQ）](./zh-CN/FAQ.md)
 - [架构可视化](./zh-CN/ARCHITECTURE_VISUAL.md)
+- [Hugging Face 发布指南](./zh-CN/HF_PUBLISHING.md)
 
 ## English
 
@@ -29,6 +30,7 @@ This folder contains full documentation for CortexNet in both Chinese and Englis
 - [API Reference](./en/API_REFERENCE.md)
 - [FAQ](./en/FAQ.md)
 - [Architecture Visuals](./en/ARCHITECTURE_VISUAL.md)
+- [Hugging Face Publishing Guide](./en/HF_PUBLISHING.md)
 
 ## Release Reports
 

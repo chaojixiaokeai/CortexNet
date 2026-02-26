@@ -1,0 +1,17 @@
+{
+  "version": "3.2.5",
+  "device": "cpu",
+  "dtype": "float32",
+  "batch_size": 1,
+  "seq_len": 64,
+  "warmup": 5,
+  "iters": 30,
+  "avg_forward_ms": 5.579,
+  "p95_forward_ms": 5.8591,
+  "throughput_tokens_per_sec": 11471.5583,
+  "logits_shape": [
+    1,
+    64,
+    4096
+  ]
+}
