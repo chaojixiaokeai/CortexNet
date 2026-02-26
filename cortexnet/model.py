@@ -31,8 +31,6 @@ CortexNet 融合了五项核心创新：
 """
 
 import os
-import json
-import hashlib
 import threading
 import logging
 import torch
@@ -44,6 +42,11 @@ try:
     from .config import CortexNetConfig
     from .blocks import CortexBlock, CortexBlockV2, CortexBlockV3, RMSNorm
     from .cortex_block_lite import CortexBlockLite
+    from .pretrained_utils import (
+        discover_weight_files,
+        build_mapped_cache_file,
+        iter_weight_tensors,
+    )
     from .compat import (
         _NoOpEvolutionEngine, _CompatCortexBlockV3,
     )
@@ -52,6 +55,11 @@ except ImportError:
     from cortexnet.config import CortexNetConfig
     from cortexnet.blocks import CortexBlock, CortexBlockV2, CortexBlockV3, RMSNorm
     from cortexnet.cortex_block_lite import CortexBlockLite
+    from cortexnet.pretrained_utils import (
+        discover_weight_files,
+        build_mapped_cache_file,
+        iter_weight_tensors,
+    )
     from cortexnet.compat import (
         _NoOpEvolutionEngine, _CompatCortexBlockV3,
     )
@@ -1003,54 +1011,6 @@ class CortexNetV3(CortexNetBase):
             else:
                 auto_calibrate = bool(getattr(config, "auto_calibrate", True))
 
-        import glob
-
-        def _discover_weight_files(path: str) -> List[str]:
-            files = sorted(glob.glob(os.path.join(path, "*.safetensors")))
-            if not files:
-                files = sorted(glob.glob(os.path.join(path, "pytorch_model*.bin")))
-            if not files:
-                files = sorted(glob.glob(os.path.join(path, "model*.safetensors")))
-            return files
-
-        def _build_mapped_cache_file(
-            *,
-            source_path: str,
-            source_model_type: str,
-            files: List[str],
-            cache_dir: str,
-        ) -> Optional[str]:
-            if not files:
-                return None
-            weight_fingerprints = []
-            for wf in files:
-                stat = os.stat(wf)
-                weight_fingerprints.append(
-                    {
-                        "name": os.path.basename(wf),
-                        "size": int(stat.st_size),
-                        "mtime_ns": int(stat.st_mtime_ns),
-                    }
-                )
-            cache_payload = {
-                "model_path": os.path.abspath(source_path),
-                "model_type": source_model_type,
-                "compatibility_mode": bool(getattr(config, "compatibility_mode", False)),
-                "expand_gqa_weights": bool(getattr(config, "expand_gqa_weights", True)),
-                "compat_ssm_rank": int(getattr(config, "compat_ssm_rank", 256)),
-                "hidden_size": int(getattr(config, "hidden_size", 0)),
-                "num_layers": int(getattr(config, "num_layers", 0)),
-                "num_heads": int(getattr(config, "num_heads", 0)),
-                "num_kv_heads": int(getattr(config, "num_kv_heads", 0)),
-                "intermediate_size": int(getattr(config, "intermediate_size", 0)),
-                "tie_word_embeddings": bool(getattr(config, "tie_word_embeddings", True)),
-                "weights": weight_fingerprints,
-            }
-            cache_key = hashlib.sha256(
-                json.dumps(cache_payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
-            ).hexdigest()[:24]
-            return os.path.join(cache_dir, f"{source_model_type}_{cache_key}.safetensors")
-
         mapped_cache_enabled = bool(getattr(config, "mapped_cache_enabled", False))
         if (
             load_weights
@@ -1066,16 +1026,17 @@ class CortexNetV3(CortexNetBase):
         mapped_cache_dir = getattr(config, "mapped_cache_dir", None) or os.path.join(
             os.path.expanduser("~"), ".cache", "cortexnet", "mapped_weights"
         )
-        weight_files: List[str] = _discover_weight_files(model_path) if load_weights else []
+        weight_files: List[str] = discover_weight_files(model_path) if load_weights else []
         cache_file: Optional[str] = None
         cache_hit = False
         if load_weights and mapped_cache_enabled and weight_files:
             os.makedirs(mapped_cache_dir, exist_ok=True)
-            cache_file = _build_mapped_cache_file(
+            cache_file = build_mapped_cache_file(
                 source_path=model_path,
                 source_model_type=model_type,
                 files=weight_files,
                 cache_dir=mapped_cache_dir,
+                config=config,
             )
             cache_hit = bool(
                 cache_file
@@ -1149,32 +1110,9 @@ class CortexNetV3(CortexNetBase):
                     mismatch_examples = 0
                     stop_loading = False
 
-                    def _iter_weight_tensors(weight_file: str):
-                        """按 tensor 流式迭代，降低大模型加载峰值内存。"""
-                        if weight_file.endswith(".safetensors"):
-                            try:
-                                from safetensors.torch import safe_open  # type: ignore
-                            except ImportError:
-                                logger.warning(
-                                    "safetensors not installed. Install with: pip install safetensors"
-                                )
-                                return
-
-                            with safe_open(weight_file, framework="pt", device="cpu") as f:
-                                for key in f.keys():
-                                    yield {key: f.get_tensor(key)}
-                            return
-
-                        if weight_file.endswith(".bin"):
-                            state = torch.load(weight_file, map_location="cpu", weights_only=True)
-                            if isinstance(state, dict):
-                                for key, value in state.items():
-                                    if torch.is_tensor(value):
-                                        yield {key: value}
-
                     for wf in weight_files:
                         logger.info(f"Loading weight shard: {os.path.basename(wf)}")
-                        for raw_chunk in _iter_weight_tensors(wf):
+                        for raw_chunk in iter_weight_tensors(wf, logger=logger):
                             if not raw_chunk:
                                 continue
                             if max_weight_tensors is not None and total_source >= max_weight_tensors:

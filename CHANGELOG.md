@@ -13,6 +13,7 @@ All notable changes to this project are documented in this file.
 - `examples/train_tiny.py` now sets seed via `--seed` and avoids tensor-to-scalar warning by using `loss.detach().item()`.
 - `cortexnet/model.py::compile_model` now logs compile skip reason and supports strict mode via `CORTEXNET_COMPILE_STRICT=1`.
 - Simplified optional data import block in `cortexnet/__init__.py` by removing redundant placeholders.
+- Refactored `CortexNet.from_pretrained` by extracting weight discovery/cache utilities into `cortexnet/pretrained_utils.py`.
 
 ### Added
 
@@ -20,6 +21,9 @@ All notable changes to this project are documented in this file.
   - `scripts/dev/check_repo_hygiene.py`
   - integrated into `make lint` and `.github/workflows/ci.yml`
   - prevents tracked cache files and hardcoded local absolute paths from entering repo.
+- Added engineering guard tests:
+  - `tests/test_engineering_guards.py`
+  - covers script argument error branches, compile strict-mode behavior, and pretrained utility functions.
 
 ## 3.2.5 - 2026-02-26
 

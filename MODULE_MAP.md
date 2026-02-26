@@ -12,6 +12,7 @@
 | `cortexnet/memory.py` | 突触记忆模块 |
 | `cortexnet/routing.py` | MoE 与协作路由 |
 | `cortexnet/cache.py` | 推理缓存结构 |
+| `cortexnet/pretrained_utils.py` | 预训练权重发现、映射缓存文件构建、权重分片流式迭代工具 |
 | `cortexnet/compat.py` | 历史兼容组件（用于 compatibility mode） |
 | `cortexnet/cortex_block_lite.py` | Lite 路径 block |
 
@@ -66,4 +67,3 @@
 - 已移除：未使用导入、未使用局部变量、无效 `f-string`、错误路径注入逻辑
 - 已隔离：脚本代码从库代码中拆分到 `scripts/`
 - 已标准化：测试与脚本统一使用 `cortexnet.*` 导入
-
