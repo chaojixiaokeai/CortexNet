@@ -26,8 +26,8 @@ jobs:
 
       - name: Static checks
         run: |
-          python -m compileall -q cortexnet scripts tests
-          python -m pyflakes cortexnet tests scripts
+          python -m compileall -q cortexnet scripts tests examples
+          python -m pyflakes cortexnet tests scripts examples
           python -m ruff check .
 
   test:
@@ -53,6 +53,8 @@ jobs:
         run: |
           python -m pytest -q
           python scripts/dev/run_tests.py
+          python examples/minimal_infer.py
+          python examples/train_tiny.py --steps 2 --batch-size 1 --seq-len 16 --device cpu
 
       - name: Verify package build
         run: |

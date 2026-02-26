@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## 3.2.4 - 2026-02-26
+
+### Added
+
+- Added release smoke benchmark script: `scripts/benchmarks/benchmark_release_smoke.py`.
+- Added fixed benchmark report hub and artifacts folder under `docs/reports/`.
+- Added bilingual architecture entry and release report links in docs index.
+
+### Changed
+
+- README upgraded with bilingual landing section (Chinese + English quick entry).
+- CI/Makefile now include `examples/` in static checks.
+- CI test job now runs example smoke scripts.
+
 ## 3.2.3 - 2026-02-26
 
 ### Added

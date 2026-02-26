@@ -8,8 +8,8 @@ install-dev:
 	python -m pip install pyflakes build twine pre-commit
 
 lint:
-	python -m pyflakes cortexnet tests scripts
-	python -m compileall -q cortexnet scripts tests
+	python -m pyflakes cortexnet tests scripts examples
+	python -m compileall -q cortexnet scripts tests examples
 	@if python -c "import ruff" >/dev/null 2>&1; then \
 		python -m ruff check .; \
 	else \

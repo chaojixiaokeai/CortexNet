@@ -40,13 +40,24 @@ Check:
 - GitHub Actions run status (`build` + `publish` jobs)
 - https://pypi.org/project/cortexnet/ latest version and upload timestamps
 
-## 6. Required Secret
+## 6. Update Benchmark Artifact
+
+Generate and commit one fixed smoke benchmark artifact for each release:
+
+```bash
+python scripts/benchmarks/benchmark_release_smoke.py \
+  --device cpu \
+  --dtype float32 \
+  --output docs/reports/artifacts/vX.Y.Z_smoke.json
+```
+
+## 7. Required Secret
 
 Repository secret:
 
 - `PYPI_API_TOKEN`
 
-## 7. Common Failure and Fix
+## 8. Common Failure and Fix
 
 `HTTP 400 File already exists` means that version has already been uploaded to PyPI.
 

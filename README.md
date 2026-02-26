@@ -4,7 +4,15 @@
 [![PyPI version](https://img.shields.io/pypi/v/cortexnet.svg)](https://pypi.org/project/cortexnet/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 
+## Language / 语言
+
+- 中文文档入口: `docs/README.md`（Chinese + English full docs index）
+- English quick docs: `docs/en/QUICKSTART_AND_USAGE.md`
+- Chinese quick docs: `docs/zh-CN/QUICKSTART_AND_USAGE.md`
+
 `CortexNet` 是一个面向语言建模与推理场景的神经网络架构实现，核心思路是将多尺度状态空间建模、选择性稀疏注意力、记忆系统、条件路由与可选高级推理模块组合到同一框架中。
+
+`CortexNet` is a unified neural architecture implementation for language modeling and reasoning, combining multi-scale SSM, selective sparse attention, memory, conditional routing, and optional advanced reasoning modules in one framework.
 
 本仓库已经完成以下整理：
 
@@ -90,6 +98,7 @@ python -m pytest -q
 - 支持与问题分流：`SUPPORT.md`
 - 安全策略：`SECURITY.md`
 - 示例代码：`examples/README.md`
+- 发布基准报告：`docs/reports/README.md`
 
 ## Compatibility Notes
 

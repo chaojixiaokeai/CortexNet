@@ -29,3 +29,7 @@ This folder contains full documentation for CortexNet in both Chinese and Englis
 - [API Reference](./en/API_REFERENCE.md)
 - [FAQ](./en/FAQ.md)
 - [Architecture Visuals](./en/ARCHITECTURE_VISUAL.md)
+
+## Release Reports
+
+- [Release Benchmark Reports](./reports/README.md)
