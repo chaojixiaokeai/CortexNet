@@ -32,9 +32,7 @@ class TransformerBlock(nn.Module):
         self.hd = d // nH
         self.norm1 = RMSNorm(d)
         self.norm2 = RMSNorm(d)
-        self.q_proj = nn.Linear(d, d, bias=False)
-        self.k_proj = nn.Linear(d, d, bias=False)
-        self.v_proj = nn.Linear(d, d, bias=False)
+        self.qkv_proj = nn.Linear(d, 3 * d, bias=False)
         self.o_proj = nn.Linear(d, d, bias=False)
         self.gate_proj = nn.Linear(d, dff, bias=False)
         self.up_proj = nn.Linear(d, dff, bias=False)
@@ -47,11 +45,16 @@ class TransformerBlock(nn.Module):
         B, L, D = x.shape
         res = x
         xn = self.norm1(x)
-        q = self.q_proj(xn).view(B, L, self.nH, self.hd).transpose(1, 2)
-        k = self.k_proj(xn).view(B, L, self.nH, self.hd).transpose(1, 2)
-        v = self.v_proj(xn).view(B, L, self.nH, self.hd).transpose(1, 2)
+        qkv = self.qkv_proj(xn)
+        q, k, v = qkv.chunk(3, dim=-1)
+
+        q = q.view(B, L, self.nH, self.hd).transpose(1, 2)
+        k = k.view(B, L, self.nH, self.hd).transpose(1, 2)
+        v = v.view(B, L, self.nH, self.hd).transpose(1, 2)
+
         q = apply_rope(q, self.rf)
         k = apply_rope(k, self.rf)
+
         out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
         x = res + self.o_proj(out.transpose(1, 2).contiguous().view(B, L, D))
         res = x
