@@ -390,6 +390,10 @@ class WeightAdapter:
         """返回未映射的权重名称列表。"""
         return self._unmapped.copy()
 
+    def get_unmapped_count(self) -> int:
+        """返回当前批次未映射权重数量（避免复制列表）。"""
+        return len(self._unmapped)
+
     def verify_mapping(
         self,
         cortex_state_dict: Dict[str, torch.Tensor],
