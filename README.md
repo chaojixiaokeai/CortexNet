@@ -88,6 +88,37 @@ tests/          # 回归与单元测试
 python -m pytest -q
 ```
 
+## Quantization & Alerts（量化与告警）
+
+为便于在**不改变模型行为定义**前提下进行部署优化，建议把量化与回归告警一起使用：
+
+- 量化策略入口：`cortexnet.quantization.QuantizationWrapper`
+  - `none`：不量化（基线）
+  - `dynamic_int8`：动态 INT8（平台支持时）
+  - `weight_only_int8`：权重量化路径
+  - `smooth_int8`：SmoothQuant 预处理 + 动态 INT8
+- 建议统一记录以下指标：`first_token_latency_s`、`decode_tokens_per_s`、`peak_rss_gb`、`checks_pass_rate`。
+- 推荐使用 `scripts/benchmarks/benchmark_quantization.py` 生成 JSON 报告，并与基线进行阈值对比。
+
+示例（量化基准）：
+
+```bash
+python scripts/benchmarks/benchmark_quantization.py \
+  --model-path "/path/to/model" \
+  --device auto \
+  --dtype auto \
+  --save-json benchmark_quantization.json
+```
+
+告警建议（可在 CI 中实现）：
+
+- 吞吐下降告警：`decode_tokens_per_s` 相比基线下降超过 `10%`
+- 首 token 延迟告警：`first_token_latency_s` 相比基线上升超过 `15%`
+- 内存占用告警：`peak_rss_gb` 相比基线上升超过 `10%`
+- 质量代理告警：`checks_pass_rate` 低于发布阈值（例如 `95%`）
+
+更多指标定义与评估流程见：`docs/en/BENCHMARKING_AND_EVALUATION.md` / `docs/zh-CN/BENCHMARKING_AND_EVALUATION.md`
+
 ## Docs
 
 - 文档中心（中英文完整文档）：`docs/README.md`
