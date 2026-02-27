@@ -38,6 +38,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+try:
+    from .ops.ssm_ops import fused_chunk_scan
+except (ImportError, ModuleNotFoundError):
+    # This might happen during special modes like packaging
+    # where the file structure is temporarily different.
+    # Fallback for compatibility.
+    from cortexnet.ops.ssm_ops import fused_chunk_scan
+
+
 logger = logging.getLogger(__name__)
 
 # Triton kernel 可用性检测
@@ -257,21 +266,23 @@ class MultiScaleSSM(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """分块并行扫描：块内并行计算，块间顺序传播。
 
-        支持 past_state 增量解码。
+        使用 `cortexnet.ops.ssm_ops.fused_chunk_scan` 实现核心扫描逻辑，
+        以提高代码模块化和数值稳定性。
         """
         batch, L, d_inner = x.shape
         N = A.shape[1]
         orig_dtype = x.dtype
 
         # 在 float32 中计算以防止 float16 溢出
-        x = x.float()
-        A = A.float()
-        B = B.float()
-        C = C.float()
-        dt = dt.float()
+        x_f = x.float()
+        A_f = A.float()
+        B_f = B.float()
+        C_f = C.float()
+        dt_f = dt.float()
 
-        A_bar = torch.exp((dt.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0)).clamp(max=20))
-        B_bar = dt.unsqueeze(-1) * B.unsqueeze(2)
+        # 预计算离散化参数
+        A_bar = torch.exp((dt_f.unsqueeze(-1) * A_f.unsqueeze(0).unsqueeze(0)).clamp(max=20))
+        B_bar = dt_f.unsqueeze(-1) * B_f.unsqueeze(2)
 
         num_chunks = (L + chunk_size - 1) // chunk_size
         h = (
@@ -285,28 +296,23 @@ class MultiScaleSSM(nn.Module):
             s = c * chunk_size
             e = min(s + chunk_size, L)
 
+            # 准备当前块的输入
             a_chunk = A_bar[:, s:e]
-            b_chunk = B_bar[:, s:e]
-            x_chunk = x[:, s:e]
-            c_chunk = C[:, s:e]
+            b_chunk_input = B_bar[:, s:e] * x_f[:, s:e].unsqueeze(-1)
+            c_chunk = C_f[:, s:e]
 
-            log_a = torch.log(a_chunk.clamp(min=1e-8))
-            log_a_cum = torch.cumsum(log_a, dim=1)
-            a_cum = torch.exp(log_a_cum)
+            # 调用融合的扫描算子
+            h_all, h_new = fused_chunk_scan(
+                a_chunk, b_chunk_input, h
+            )
 
-            h_contrib = a_cum * h.unsqueeze(1)
-
-            input_term = b_chunk * x_chunk.unsqueeze(-1)
-            normalized = input_term / (a_cum + 1e-8)
-            cum_input = torch.cumsum(normalized, dim=1)
-            input_contrib = a_cum * cum_input
-
-            h_all = h_contrib + input_contrib
-
+            # 计算输出 y
+            # (B, L_chunk, D, N) * (B, L_chunk, 1, N) -> sum -> (B, L_chunk, D)
             y_chunk = (h_all * c_chunk.unsqueeze(2)).sum(-1)
             all_outputs.append(y_chunk)
 
-            h = h_all[:, -1]
+            # 更新下一块的初始状态
+            h = h_new
 
         y = torch.cat(all_outputs, dim=1).to(orig_dtype)
         new_state = h.to(orig_dtype) if use_cache else None

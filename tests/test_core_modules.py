@@ -515,6 +515,114 @@ def test_episodic_memory_sdpa():
 
 
 # ═══════════════════════════════════════════════════════════════
+#                  Refactoring & Optimization Tests
+# ═══════════════════════════════════════════════════════════════
+from typing import Optional, Tuple
+import torch.nn.functional as F
+
+def _reference_chunk_parallel_scan(
+    x: torch.Tensor,
+    A: torch.Tensor,
+    B: torch.Tensor,
+    C: torch.Tensor,
+    dt: torch.Tensor,
+    chunk_size: int = 64,
+    past_state: Optional[torch.Tensor] = None,
+    use_cache: bool = False,
+) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    """Reference implementation of chunk parallel scan for testing equivalence."""
+    batch, L, d_inner = x.shape
+    N = A.shape[1]
+    orig_dtype = x.dtype
+
+    x = x.float()
+    A = A.float()
+    B = B.float()
+    C = C.float()
+    dt = dt.float()
+
+    A_bar = torch.exp((dt.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0)).clamp(max=20))
+    B_bar = dt.unsqueeze(-1) * B.unsqueeze(2)
+
+    num_chunks = (L + chunk_size - 1) // chunk_size
+    h = (
+        past_state.float()
+        if past_state is not None
+        else torch.zeros(batch, d_inner, N, device=x.device, dtype=torch.float32)
+    )
+    all_outputs = []
+
+    for c in range(num_chunks):
+        s = c * chunk_size
+        e = min(s + chunk_size, L)
+
+        a_chunk = A_bar[:, s:e]
+        b_chunk = B_bar[:, s:e]
+        x_chunk = x[:, s:e]
+        c_chunk = C[:, s:e]
+
+        log_a = torch.log(a_chunk.clamp(min=1e-8))
+        log_a_cum = torch.cumsum(log_a, dim=1)
+        a_cum = torch.exp(log_a_cum)
+
+        h_contrib = a_cum * h.unsqueeze(1)
+
+        input_term = b_chunk * x_chunk.unsqueeze(-1)
+        normalized = input_term / (a_cum + 1e-8)
+        cum_input = torch.cumsum(normalized, dim=1)
+        input_contrib = a_cum * cum_input
+
+        h_all = h_contrib + input_contrib
+        y_chunk = (h_all * c_chunk.unsqueeze(2)).sum(-1)
+        all_outputs.append(y_chunk)
+
+        h = h_all[:, -1]
+
+    y = torch.cat(all_outputs, dim=1).to(orig_dtype)
+    new_state = h.to(orig_dtype) if use_cache else None
+    return y, new_state
+
+
+def test_ssm_chunk_scan_equivalence():
+    """Tests if the refactored fused_chunk_scan op is equivalent to the original."""
+    from cortexnet.ssm import MultiScaleSSM
+
+    D_MODEL = 32
+    STATE_SIZE = 8
+    BATCH_SIZE = 2
+    SEQ_LEN = 128
+    CHUNK_SIZE = 16
+
+    ssm = MultiScaleSSM(d_model=D_MODEL, state_size=STATE_SIZE)
+    ssm.eval()
+
+    x = torch.randn(BATCH_SIZE, SEQ_LEN, D_MODEL, dtype=torch.float32)
+
+    # Manually compute inputs to the scan function
+    xz = ssm.in_proj(x)
+    x_ssm, _ = xz.chunk(2, dim=-1)
+
+    input_dtype = x.dtype
+    A = -torch.exp(ssm.A_log.float()).to(input_dtype)
+    B_mat = ssm.B_proj(x_ssm)
+    C_mat = ssm.C_proj(x_ssm)
+    dt = F.softplus(ssm.dt_proj(x_ssm))
+
+    # Run the new (refactored) implementation
+    y_new, state_new = ssm._chunk_parallel_scan(
+        x_ssm, A, B_mat, C_mat, dt, chunk_size=CHUNK_SIZE, use_cache=True
+    )
+
+    # Run the old (reference) implementation
+    y_ref, state_ref = _reference_chunk_parallel_scan(
+        x_ssm, A, B_mat, C_mat, dt, chunk_size=CHUNK_SIZE, use_cache=True
+    )
+
+    assert torch.allclose(y_ref, y_new, atol=1e-5), "Output `y` must be equivalent"
+    assert torch.allclose(state_ref, state_new, atol=1e-5), "Final state `h` must be equivalent"
+
+
+# ═══════════════════════════════════════════════════════════════
 #                  设备解析与 NPU 兼容测试
 # ═══════════════════════════════════════════════════════════════
 
