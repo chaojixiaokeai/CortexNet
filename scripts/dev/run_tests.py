@@ -157,6 +157,42 @@ def test_weight_adapter_qkv_split():
     assert "blocks.0.attention.v_proj.weight" in cw
     print("✅ test_weight_adapter_qkv_split")
 
+def test_pretrained_utils_discover_index():
+    from cortexnet.pretrained_utils import discover_weight_files
+    with tempfile.TemporaryDirectory() as tmpdir:
+        shard1 = os.path.join(tmpdir, "model-00001-of-00002.safetensors")
+        shard2 = os.path.join(tmpdir, "model-00002-of-00002.safetensors")
+        with open(shard1, "wb") as f:
+            f.write(b"a")
+        with open(shard2, "wb") as f:
+            f.write(b"b")
+        with open(os.path.join(tmpdir, "model.safetensors.index.json"), "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "metadata": {},
+                    "weight_map": {
+                        "a": "model-00001-of-00002.safetensors",
+                        "b": "model-00002-of-00002.safetensors",
+                    },
+                },
+                f,
+            )
+        found = discover_weight_files(tmpdir)
+        assert found == [shard1, shard2]
+    print("✅ test_pretrained_utils_discover_index")
+
+def test_pretrained_utils_iter_bin_nested_state_dict():
+    from cortexnet.pretrained_utils import iter_weight_tensors
+    with tempfile.TemporaryDirectory() as tmpdir:
+        wf = os.path.join(tmpdir, "pytorch_model.bin")
+        torch.save({"state_dict": {"w": torch.randn(2, 2), "meta": "x"}}, wf)
+        chunks = list(iter_weight_tensors(wf))
+        merged = {}
+        for chunk in chunks:
+            merged.update(chunk)
+        assert "w" in merged and torch.is_tensor(merged["w"])
+    print("✅ test_pretrained_utils_iter_bin_nested_state_dict")
+
 def test_device_manager():
     from cortexnet.ops.device_manager import DeviceManager
     dm = DeviceManager()
@@ -264,6 +300,7 @@ ALL_TESTS = [
     test_config_defaults, test_config_custom, test_config_from_dict, test_training_config,
     test_model_registry, test_detect_model_type, test_get_cortexnet_config,
     test_weight_adapter_mapping, test_weight_adapter_gqa, test_weight_adapter_qkv_split,
+    test_pretrained_utils_discover_index, test_pretrained_utils_iter_bin_nested_state_dict,
     test_device_manager, test_npu_operators,
     test_cortexnet_forward, test_cortexnet_generate,
     test_from_pretrained_mock,

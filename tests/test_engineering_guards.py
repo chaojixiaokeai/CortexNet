@@ -56,6 +56,25 @@ def test_discover_weight_files_priority(tmp_path: Path) -> None:
     assert (tmp_path / "weights.safetensors").as_posix() in found
 
 
+def test_discover_weight_files_from_index(tmp_path: Path) -> None:
+    (tmp_path / "model-00001-of-00002.safetensors").write_bytes(b"a")
+    (tmp_path / "model-00002-of-00002.safetensors").write_bytes(b"b")
+    (tmp_path / "weights.safetensors").write_bytes(b"fallback")
+    (tmp_path / "model.safetensors.index.json").write_text(
+        (
+            '{"metadata":{},"weight_map":{"a":"model-00001-of-00002.safetensors",'
+            '"b":"model-00002-of-00002.safetensors"}}'
+        ),
+        encoding="utf-8",
+    )
+
+    found = discover_weight_files(str(tmp_path))
+    assert found == [
+        (tmp_path / "model-00001-of-00002.safetensors").as_posix(),
+        (tmp_path / "model-00002-of-00002.safetensors").as_posix(),
+    ]
+
+
 def test_build_mapped_cache_file_stable(tmp_path: Path) -> None:
     wf = tmp_path / "weights.safetensors"
     wf.write_bytes(b"content")
@@ -83,6 +102,19 @@ def test_build_mapped_cache_file_stable(tmp_path: Path) -> None:
 def test_iter_weight_tensors_bin(tmp_path: Path) -> None:
     wf = tmp_path / "pytorch_model.bin"
     torch.save({"w": torch.randn(2, 2), "meta": "x"}, wf)
+
+    chunks = list(iter_weight_tensors(str(wf)))
+    assert chunks
+    merged = {}
+    for chunk in chunks:
+        merged.update(chunk)
+    assert "w" in merged
+    assert torch.is_tensor(merged["w"])
+
+
+def test_iter_weight_tensors_bin_nested_state_dict(tmp_path: Path) -> None:
+    wf = tmp_path / "pytorch_model.bin"
+    torch.save({"state_dict": {"w": torch.randn(2, 2), "meta": "x"}}, wf)
 
     chunks = list(iter_weight_tensors(str(wf)))
     assert chunks
@@ -128,4 +160,3 @@ def test_script_requires_model_path_long_context() -> None:
     result = _run_script(path)
     assert result.returncode == 2
     assert "Missing --model-path" in result.stderr
-

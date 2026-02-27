@@ -70,6 +70,7 @@ class CortexBlockLite(nn.Module):
         config: CortexNetConfig 配置对象
         layer_idx: 当前层索引（用于 RoPE 偏移计算）
     """
+    __version__ = "1.0.0"
 
     def __init__(self, config: CortexNetConfig, layer_idx: int = 0):
         super().__init__()

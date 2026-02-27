@@ -11,11 +11,51 @@ from typing import Any, Dict, Iterator, List, Optional
 import torch
 
 
+def _discover_from_index(path: str, index_name: str) -> List[str]:
+    """Resolve shard files from a HuggingFace-style index json."""
+    index_path = os.path.join(path, index_name)
+    if not os.path.isfile(index_path):
+        return []
+
+    try:
+        with open(index_path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return []
+
+    weight_map = payload.get("weight_map")
+    if not isinstance(weight_map, dict):
+        return []
+
+    seen: set[str] = set()
+    files: List[str] = []
+    for shard_name in sorted(set(weight_map.values())):
+        if not isinstance(shard_name, str):
+            continue
+        shard_file = os.path.join(path, shard_name)
+        if os.path.isfile(shard_file) and shard_file not in seen:
+            seen.add(shard_file)
+            files.append(shard_file)
+    return files
+
+
 def discover_weight_files(path: str) -> List[str]:
     """Discover source weight files with deterministic priority."""
-    patterns = ("*.safetensors", "pytorch_model*.bin", "model*.safetensors")
+    if not os.path.isdir(path):
+        return []
+
+    for index_name in ("model.safetensors.index.json", "pytorch_model.bin.index.json"):
+        files = _discover_from_index(path, index_name)
+        if files:
+            return files
+
+    patterns = ("*.safetensors", "pytorch_model*.bin", "model*.bin")
     for pattern in patterns:
-        files = sorted(glob.glob(os.path.join(path, pattern)))
+        files = [
+            file
+            for file in sorted(glob.glob(os.path.join(path, pattern)))
+            if os.path.isfile(file)
+        ]
         if files:
             return files
     return []
@@ -87,8 +127,26 @@ def iter_weight_tensors(
         return
 
     if weight_file.endswith(".bin"):
-        state = torch.load(weight_file, map_location="cpu", weights_only=True)
-        if isinstance(state, dict):
-            for key, value in state.items():
+        try:
+            state = torch.load(weight_file, map_location="cpu", weights_only=True)
+        except TypeError:
+            # torch<2.0 may not support weights_only; fallback keeps compatibility.
+            state = torch.load(weight_file, map_location="cpu")
+
+        state_dict = state if isinstance(state, dict) else None
+        if isinstance(state_dict, dict) and not any(torch.is_tensor(v) for v in state_dict.values()):
+            for nested_key in ("state_dict", "model", "module"):
+                nested = state_dict.get(nested_key)
+                if isinstance(nested, dict):
+                    state_dict = nested
+                    break
+
+        if isinstance(state_dict, dict):
+            for key in list(state_dict.keys()):
+                value = state_dict.pop(key)
                 if torch.is_tensor(value):
                     yield {key: value}
+            return
+
+        if logger is not None:
+            logger.warning("Unsupported checkpoint format for %s", weight_file)

@@ -1130,14 +1130,17 @@ class CortexNetV3(CortexNetBase):
                             total_source += len(raw_chunk)
 
                             mapped_chunk = adapter.map_weights(raw_chunk)
-                            total_unmapped_source += len(adapter.get_unmapped_weights())
+                            total_unmapped_source += adapter.get_unmapped_count()
 
                             for name, param in mapped_chunk.items():
                                 target = target_tensors.get(name)
                                 if target is not None:
                                     if target.shape == param.shape:
                                         with torch.no_grad():
-                                            target.copy_(param.to(dtype=target.dtype))
+                                            source = param
+                                            if source.device != target.device or source.dtype != target.dtype:
+                                                source = source.to(device=target.device, dtype=target.dtype)
+                                            target.copy_(source)
                                         total_mapped += 1
                                     else:
                                         total_shape_mismatch += 1
