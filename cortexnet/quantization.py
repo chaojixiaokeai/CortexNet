@@ -207,10 +207,28 @@ def _try_torchao_dynamic_int8(model: nn.Module, inplace: bool) -> Optional[nn.Mo
     """尝试使用 torchao eager quantize_ API（可选依赖，默认选择性量化）。"""
     if os.getenv("CORTEXNET_DISABLE_TORCHAO", "0") == "1":
         return None
-    try:
-        import torchao.quantization as tq  # type: ignore
-    except Exception:
-        return None
+
+    # 屏蔽 torchao 内部的已知 DeprecationWarning
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=".*torchao.dtypes.uintx.dyn_int8_act_int4_wei_cpu_layout.*",
+            category=DeprecationWarning,
+        )
+        warnings.filterwarnings(
+            "ignore",
+            message=".*torchao.dtypes.uintx.uintx_layout.*",
+            category=DeprecationWarning,
+        )
+        warnings.filterwarnings(
+            "ignore",
+            message=".*BlockSparseLayout.*",
+            category=DeprecationWarning,
+        )
+        try:
+            import torchao.quantization as tq  # type: ignore
+        except Exception:
+            return None
 
     quantize_fn = getattr(tq, "quantize_", None)
     if quantize_fn is None:
