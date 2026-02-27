@@ -22,6 +22,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
+from functools import lru_cache
 
 
 def _mps_safe() -> bool:
@@ -44,11 +45,13 @@ class HeadRMSNorm(nn.Module):
         return x * rms * self.weight
 
 
+@lru_cache(maxsize=16)
 def precompute_rope_freqs(
     dim: int, max_seq_len: int, theta: float = 10000.0
 ) -> torch.Tensor:
     """预计算旋转位置编码 (RoPE) 的频率。
 
+    使用 LRU 缓存避免重复计算，提升长序列训练效率。
     返回 cos/sin 张量而非复数，确保 CUDA/MPS/CPU 全兼容。
 
     Args:

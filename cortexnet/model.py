@@ -120,13 +120,22 @@ class CortexNetBase(nn.Module):
                     block.fusion.attn_bias.fill_(10.0)
 
     def _init_weights(self, module: nn.Module):
-        """使用缩放正态分布初始化权重。"""
+        """使用缩放正态分布初始化权重。
+        
+        初始化标准差可通过 config.weight_init_std 配置，默认为 0.02。
+        """
+        # 从 config 读取初始化标准差，支持自定义
+        init_std = getattr(self.config, 'weight_init_std', 0.02)
+        
         if isinstance(module, nn.Linear):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            torch.nn.init.normal_(module.weight, mean=0.0, std=init_std)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)
         elif isinstance(module, nn.Embedding):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            torch.nn.init.normal_(module.weight, mean=0.0, std=init_std)
+        elif isinstance(module, nn.LayerNorm):
+            torch.nn.init.ones_(module.weight)
+            torch.nn.init.zeros_(module.bias)
 
     def _maybe_init_weights(self) -> None:
         """按配置决定是否执行自定义二次初始化。"""
