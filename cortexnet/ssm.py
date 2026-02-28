@@ -58,7 +58,23 @@ try:
     _TRITON_AVAILABLE = True
     logger.info("Triton available: SSM will use custom GPU kernels")
 except ImportError:
-    pass
+    logger.debug("Triton not available: SSM will use PyTorch fallback")
+
+# 性能优化配置
+_SSM_CHUNK_SIZE_DEFAULT = 64
+_SSM_MAX_SEQ_LEN_FOR_PARALLEL = 2048  # 超过此长度使用分块并行
+
+
+def _get_optimal_chunk_size(seq_len: int) -> int:
+    """根据序列长度选择最优的分块大小。"""
+    if seq_len <= 128:
+        return 16
+    elif seq_len <= 512:
+        return 32
+    elif seq_len <= 2048:
+        return 64
+    else:
+        return 128
 
 
 class MultiScaleSSM(nn.Module):
@@ -169,21 +185,32 @@ class MultiScaleSSM(nn.Module):
         dt = F.softplus(self.dt_proj(x_ssm))  # (B, L, d_inner), 正值
 
         # 选择性扫描 — 优先 Triton kernel → 分块并行 → 顺序扫描
-        if L > 1:
-            if _TRITON_AVAILABLE and x_ssm.is_cuda:
-                y, new_state = self._triton_scan(
-                    x_ssm, A, B_mat, C_mat, dt,
-                    past_state=past_state,
-                    use_cache=use_cache,
-                )
+        try:
+            if L > 1:
+                if _TRITON_AVAILABLE and x_ssm.is_cuda:
+                    y, new_state = self._triton_scan(
+                        x_ssm, A, B_mat, C_mat, dt,
+                        past_state=past_state,
+                        use_cache=use_cache,
+                    )
+                else:
+                    # 动态选择最优分块大小
+                    chunk_size = _get_optimal_chunk_size(L)
+                    y, new_state = self._chunk_parallel_scan(
+                        x_ssm, A, B_mat, C_mat, dt,
+                        chunk_size=chunk_size,
+                        past_state=past_state,
+                        use_cache=use_cache,
+                    )
             else:
-                y, new_state = self._chunk_parallel_scan(
+                y, new_state = self._selective_scan(
                     x_ssm, A, B_mat, C_mat, dt,
-                    chunk_size=min(max(16, L), 64),
                     past_state=past_state,
                     use_cache=use_cache,
                 )
-        else:
+        except RuntimeError as e:
+            # 如果并行扫描失败，回退到顺序扫描
+            logger.warning(f"Parallel scan failed ({e}), falling back to sequential scan")
             y, new_state = self._selective_scan(
                 x_ssm, A, B_mat, C_mat, dt,
                 past_state=past_state,

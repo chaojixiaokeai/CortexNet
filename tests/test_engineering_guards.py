@@ -160,3 +160,51 @@ def test_script_requires_model_path_long_context() -> None:
     result = _run_script(path)
     assert result.returncode == 2
     assert "Missing --model-path" in result.stderr
+
+
+def test_config_validation_hidden_size_divisible() -> None:
+    """Test that hidden_size must be divisible by num_heads."""
+    with pytest.raises(ValueError):
+        CortexNetConfig(hidden_size=100, num_heads=3)  # 100 not divisible by 3
+
+
+def test_config_default_values() -> None:
+    """Test default configuration values."""
+    cfg = CortexNetConfig()
+    assert cfg.vocab_size == 32000
+    assert cfg.hidden_size == 2560
+    assert cfg.num_layers == 32
+    assert cfg.dropout == 0.0
+    assert cfg.norm_eps == 1e-6
+
+
+def test_model_forward_shape() -> None:
+    """Test model forward pass produces correct output shape."""
+    cfg = CortexNetConfig(vocab_size=128, hidden_size=64, num_layers=1, num_heads=2)
+    model = CortexNet(cfg).eval()
+    batch_size, seq_len = 2, 10
+    input_ids = torch.randint(0, cfg.vocab_size, (batch_size, seq_len))
+    with torch.no_grad():
+        logits = model(input_ids)
+    assert logits.shape == (batch_size, seq_len, cfg.vocab_size)
+
+
+def test_model_generate_basic() -> None:
+    """Test basic text generation functionality."""
+    cfg = CortexNetConfig(vocab_size=128, hidden_size=64, num_layers=1, num_heads=2)
+    model = CortexNet(cfg).eval()
+    input_ids = torch.tensor([[1, 2, 3]])
+    with torch.no_grad():
+        output = model.generate(input_ids, max_new_tokens=5, temperature=1.0, top_p=1.0)
+    assert output.shape[1] > input_ids.shape[1]  # Generated more tokens
+
+
+def test_cortexblock_lite_mode() -> None:
+    """Test CortexBlockLite mode for resource-constrained environments."""
+    cfg = CortexNetConfig(vocab_size=128, hidden_size=64, num_layers=1, num_heads=2, lite=True)
+    model = CortexNet(cfg).eval()
+    assert model.config.lite is True
+    input_ids = torch.randint(0, cfg.vocab_size, (1, 5))
+    with torch.no_grad():
+        logits = model(input_ids)
+    assert logits.shape == (1, 5, cfg.vocab_size)
