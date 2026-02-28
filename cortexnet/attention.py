@@ -231,6 +231,28 @@ class SelectiveSparseAttention(nn.Module):
         else:  # ratio
             return max(1, int(seq_len * self.top_k_ratio))
 
+    def _expand_kv_for_gqa(
+        self,
+        k: torch.Tensor,
+        v: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """将 KV 头扩展到 Q 头数，优先使用零拷贝 expand 视图。"""
+        if self.num_kv_heads == self.num_heads:
+            return k, v
+        B, _, S, _ = k.shape
+        kv_repeat = self.num_heads // self.num_kv_heads
+        k = (
+            k.unsqueeze(2)
+            .expand(B, self.num_kv_heads, kv_repeat, S, self.head_dim)
+            .reshape(B, self.num_heads, S, self.head_dim)
+        )
+        v = (
+            v.unsqueeze(2)
+            .expand(B, self.num_kv_heads, kv_repeat, S, self.head_dim)
+            .reshape(B, self.num_heads, S, self.head_dim)
+        )
+        return k, v
+
     def forward(
         self,
         x: torch.Tensor,
@@ -339,22 +361,15 @@ class SelectiveSparseAttention(nn.Module):
 
         # 构建因果掩码 (bool)
         attn_mask = None
-        if causal_mask and (L > 1 or position_offset > 0):
+        if causal_mask and L > 1:
             q_positions = torch.arange(
                 position_offset, position_offset + L, device=x.device
             ).view(1, 1, L, 1)
             k_positions = top_k_indices_full.unsqueeze(1).unsqueeze(1)
             attn_mask = q_positions >= k_positions  # (B, 1, L, k)
 
-        # GQA 扩展：KV 头数 < Q 头数时，expand 不复制内存（比 repeat_interleave 快 2-3x）
-        if self.num_kv_heads != self.num_heads:
-            kv_repeat = self.num_heads // self.num_kv_heads
-            # expand 创建视图而非拷贝
-            k_attn = k.unsqueeze(2).expand(-1, -1, kv_repeat, -1, -1).reshape(B, self.num_heads, -1, self.head_dim)
-            v_attn = v.unsqueeze(2).expand(-1, -1, kv_repeat, -1, -1).reshape(B, self.num_heads, -1, self.head_dim)
-        else:
-            k_attn = k
-            v_attn = v
+        # GQA 扩展：KV 头数 < Q 头数时，expand 创建视图避免额外内存复制
+        k_attn, v_attn = self._expand_kv_for_gqa(k, v)
 
         # 尝试使用 PyTorch SDPA（自动选择 Flash/Memory-efficient/Math 后端）
         out = self._sdpa_attention(q, k_attn, v_attn, attn_mask)
@@ -403,9 +418,11 @@ class SelectiveSparseAttention(nn.Module):
         try:
             # SDPA 的 bool mask 语义：True=允许关注，False=屏蔽。
             if attn_mask is not None:
+                if attn_mask.dtype is not torch.bool:
+                    attn_mask = attn_mask.to(dtype=torch.bool)
                 out = F.scaled_dot_product_attention(
                     q, k, v,
-                    attn_mask=attn_mask.to(dtype=torch.bool),
+                    attn_mask=attn_mask,
                     dropout_p=self.attn_dropout.p if self.training else 0.0,
                     scale=self.scale,
                 )
@@ -443,11 +460,8 @@ class SelectiveSparseAttention(nn.Module):
         q_w = apply_rope(q_w, rope_freqs)
         k_w = apply_rope(k_w, rope_freqs)
 
-        # GQA 扩展
-        if self.num_kv_heads != self.num_heads:
-            kv_repeat = self.num_heads // self.num_kv_heads
-            k_w = k_w.repeat_interleave(kv_repeat, dim=1)
-            v_w = v_w.repeat_interleave(kv_repeat, dim=1)
+        # GQA 扩展：使用 expand 视图，避免 repeat_interleave 复制
+        k_w, v_w = self._expand_kv_for_gqa(k_w, v_w)
 
         # 如果序列短于 2 倍窗口，直接用全量注意力
         if L <= W * 2:

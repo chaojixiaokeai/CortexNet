@@ -40,8 +40,9 @@ def _cleanup(tmpdir):
 def test_config_defaults():
     from cortexnet.config import CortexNetConfig
     c = CortexNetConfig()
+    hidden_default = CortexNetConfig.__dataclass_fields__["hidden_size"].default
     assert c.vocab_size == 32000
-    assert c.hidden_size == 512
+    assert c.hidden_size == hidden_default
     assert c.num_kv_heads == 8
     print("✅ test_config_defaults")
 

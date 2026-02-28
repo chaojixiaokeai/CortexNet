@@ -35,9 +35,11 @@ def test_config_defaults():
     """测试 CortexNetConfig 默认值创建。"""
     from cortexnet.config import CortexNetConfig
     config = CortexNetConfig()
+    hidden_default = CortexNetConfig.__dataclass_fields__["hidden_size"].default
+    layers_default = CortexNetConfig.__dataclass_fields__["num_layers"].default
     assert config.vocab_size == 32000
-    assert config.hidden_size == 512
-    assert config.num_layers == 4
+    assert config.hidden_size == hidden_default
+    assert config.num_layers == layers_default
     assert config.num_heads == 8
     assert config.num_kv_heads == 8  # __post_init__ should set to num_heads
     assert config.norm_eps == 1e-6

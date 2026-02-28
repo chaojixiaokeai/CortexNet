@@ -178,8 +178,15 @@ class MultiScaleSSM(nn.Module):
         xz = self.in_proj(x)  # (B, L, 2*d_inner)
         x_ssm, z = xz.chunk(2, dim=-1)  # 各 (B, L, d_inner)
 
+        # 缓存 A 矩阵，减少 redundant 计算（只在推理模式下或 dtype 变化时重算）
+        if not hasattr(self, "_cached_A") or self._cached_A.dtype != input_dtype or self.training:
+            A = -torch.exp(self.A_log.float()).to(input_dtype)  # (d_inner, N)
+            if not self.training:
+                self._cached_A = A
+        else:
+            A = self._cached_A
+
         # 计算输入依赖的 SSM 参数（float32 计算后转回原 dtype，MPS 兼容）
-        A = -torch.exp(self.A_log.float()).to(input_dtype)  # (d_inner, N)
         B_mat = self.B_proj(x_ssm)  # (B, L, N)
         C_mat = self.C_proj(x_ssm)  # (B, L, N)
         dt = F.softplus(self.dt_proj(x_ssm))  # (B, L, d_inner), 正值

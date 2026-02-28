@@ -45,8 +45,8 @@ class CortexNetConfig:
 
     # ═══ 基础架构参数 ═══
     vocab_size: int = 32000
-    hidden_size: int = 512
-    num_layers: int = 4
+    hidden_size: int = 2560
+    num_layers: int = 32
     num_heads: int = 8
     max_seq_len: int = 8192
     dropout: float = 0.0

@@ -202,3 +202,34 @@ def safe_clip_grad_norm_(
         model.parameters(), max_norm, norm_type=norm_type,
     )
     return float(total_norm)
+
+
+class PerformanceTimer:
+    """高性能计时器，支持 CUDA 同步。
+
+    用于准确测量代码块的执行时间。
+
+    Usage:
+        with PerformanceTimer("Forward Pass") as timer:
+            output = model(input)
+        print(f"Time: {timer.elapsed:.4f}s")
+    """
+
+    def __init__(self, name: str = "Task", sync_cuda: bool = True):
+        self.name = name
+        self.sync_cuda = sync_cuda and torch.cuda.is_available()
+        self.start_time = 0.0
+        self.elapsed = 0.0
+
+    def __enter__(self):
+        if self.sync_cuda:
+            torch.cuda.synchronize()
+        import time
+        self.start_time = time.perf_counter()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        import time
+        if self.sync_cuda:
+            torch.cuda.synchronize()
+        self.elapsed = time.perf_counter() - self.start_time

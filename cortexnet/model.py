@@ -68,6 +68,26 @@ logger = logging.getLogger(__name__)
 
 
 
+class CortexNetOutput(dict):
+    """兼容输出容器：支持 dict 访问，也支持 Tensor 风格 shape 访问。"""
+
+    @property
+    def logits(self) -> torch.Tensor:
+        return self["logits"]
+
+    @property
+    def shape(self) -> torch.Size:
+        return self.logits.shape
+
+    def __getattr__(self, name: str) -> Any:
+        if name in self:
+            return self[name]
+        logits = self.get("logits")
+        if logits is not None and hasattr(logits, name):
+            return getattr(logits, name)
+        raise AttributeError(f"{self.__class__.__name__!s} has no attribute {name!r}")
+
+
 class CortexNetBase(nn.Module):
     """CortexNet 语言模型。
 
@@ -147,7 +167,7 @@ class CortexNetBase(nn.Module):
         self,
         input_ids: torch.Tensor,
         labels: Optional[torch.Tensor] = None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> CortexNetOutput:
         """
         Args:
             input_ids: (batch, seq_len) token 索引
@@ -172,7 +192,7 @@ class CortexNetBase(nn.Module):
         x = self.final_norm(x)
         logits = self.lm_head(x)  # (B, L, vocab_size)
 
-        result = {"logits": logits}
+        result = CortexNetOutput(logits=logits)
 
         # 计算损失
         if labels is not None:
@@ -618,7 +638,7 @@ class CortexNetV3(CortexNetBase):
         labels: Optional[torch.Tensor] = None,
         past_cache: Optional[List[Tuple[Any, Any, Any]]] = None,
         use_cache: bool = False,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> CortexNetOutput:
         """从嵌入张量前向（跳过 embedding 层），用于对抗训练等场景。"""
         return self._forward_impl(x_emb, labels, past_cache, use_cache)
 
@@ -631,7 +651,7 @@ class CortexNetV3(CortexNetBase):
         *,
         start_warmup_after_infer: bool = True,
         ssm_only: bool = False,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> CortexNetOutput:
         """Forward with optional layer caches for incremental decoding.
 
         Args:
@@ -657,7 +677,7 @@ class CortexNetV3(CortexNetBase):
         past_cache: Optional[List[Tuple[Any, Any, Any]]] = None,
         use_cache: bool = False,
         ssm_only: bool = False,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> CortexNetOutput:
         """内部前向实现（接受已嵌入的张量）。
 
         Args:
@@ -689,7 +709,7 @@ class CortexNetV3(CortexNetBase):
         x = self.final_norm(x)
         logits = self.lm_head(x)
 
-        result = {"logits": logits, "compute_budget": compute_budget}
+        result = CortexNetOutput(logits=logits, compute_budget=compute_budget)
         if use_cache and new_cache:
             result["past_cache"] = new_cache
 
